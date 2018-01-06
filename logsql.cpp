@@ -34,11 +34,14 @@ bool CLogSQL::OnLoad(const CString& sArgs, CString& sMessage) {
 
   if(!mysqlConn) {
     sMessage = "Could not initiate a MySQL connection";
-    
+
     DEBUG("mysql_init() failed.");
 
     return false;
   }
+
+  my_bool reconnect = 1;
+  mysql_options(mysqlConn, MYSQL_OPT_RECONNECT, &reconnect);
 
   if(!mysql_real_connect(mysqlConn, sHost.c_str(), sUserDB.c_str(), sPassDB.c_str(), sDatabase.c_str(), 0, NULL, 0)) {
     sMessage = "Could not connect to the MySQL server";
