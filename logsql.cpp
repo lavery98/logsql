@@ -49,6 +49,7 @@ bool CLogSQL::OnLoad(const CString& sArgs, CString& sMessage) {
     CString err = mysql_error(mysqlConn);
     DEBUG("Could not connect to MySQL server. " + err);
 
+    mysql_close(mysqlConn);
     return false;
   }
 
