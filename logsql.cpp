@@ -4,6 +4,8 @@
 
 #include <mysql/mysql.h>
 
+using std::map;
+
 class CLogSQL : public CModule {
 public:
   MODCONSTRUCTOR(CLogSQL) {}
@@ -66,7 +68,18 @@ void CLogSQL::PutLog(const CString& sTarget, const CString& sSender, const CStri
 }
 
 void CLogSQL::PutLog(const CChan& Channel, const CString& sSender, const CString& sType, const CString& sMessage) {
-  PutLog(Channel.GetName(), sSender, sType, sMessage);
+  const map<unsigned char, CString>& modes = Channel.GetModes();
+  int priv = 0;
+
+  for(const auto& it : modes) {
+    if(it.first == 's' || it.first == 'p') {
+      priv = 1;
+
+      break;
+    }
+  }
+
+  PutLog(Channel.GetName(), sSender, sType, sMessage, priv);
 }
 
 bool CLogSQL::OnLoad(const CString& sArgs, CString& sMessage) {
