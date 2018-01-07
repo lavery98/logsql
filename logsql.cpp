@@ -147,6 +147,9 @@ void CLogSQL::OnKick(const CNick& Nick, const CString& sOpNick, CChan& Channel, 
 }
 
 void CLogSQL::OnQuit(const CNick& Nick, const CString& sMessage, const vector<CChan*>& vChans) {
+  for(CChan* pChan : vChans) {
+    PutLog(*pChan, Nick.GetNick(), "QUIT", sMessage);
+  }
 }
 
 void CLogSQL::OnJoin(const CNick& Nick, CChan& Channel) {
