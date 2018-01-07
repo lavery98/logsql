@@ -153,6 +153,7 @@ void CLogSQL::OnJoin(const CNick& Nick, CChan& Channel) {
 }
 
 void CLogSQL::OnPart(const CNick& Nick, CChan& Channel, const CString& sMessage) {
+  PutLog(Channel, Nick.GetNick(), "PART", sMessage);
 }
 
 void CLogSQL::OnNick(const CNick& Nick, const CString& sNewNick, const vector<CChan*>& vChans) {
