@@ -5,6 +5,7 @@
 #include <mysql/mysql.h>
 
 using std::map;
+using std::vector;
 
 class CLogSQL : public CModule {
 public:
@@ -19,9 +20,27 @@ public:
   void PutLog(const CChan& Channel, const CString& sSender, const CString& sType, const CString& sMessage);
 
   bool OnLoad(const CString& sArgs, CString& sMessage) override;
+  void OnIRCConnected() override;
+  void OnIRCDisconnected() override;
 
+  void OnRawMode2(const CNick* pOpNick, CChan& Channel, const CString& sModes, const CString& sArgs) override;
+  void OnKick(const CNick& Nick, const CString& sOpNick, CChan& Channel, const CString& sMessage) override;
+  void OnQuit(const CNick& Nick, const CString& sMessage, const vector<CChan*>& vChans) override;
+  void OnJoin(const CNick& Nick, CChan& Channel) override;
+  void OnPart(const CNick& Nick, CChan& Channel, const CString& sMessage) override;
+  void OnNick(const CNick& Nick, const CString& sNewNick, const vector<CChan*>& vChans) override;
+  EModRet OnTopic(CNick& Nick, CChan& Channel, CString& sTopic) override;
+
+  EModRet OnUserNotice(CString& sTarget, CString& sMessage) override;
+  EModRet OnPrivNotice(CNick& Nick, CString& sMessage) override;
   EModRet OnChanNotice(CNick& Nick, CChan& Channel, CString& sMessage) override;
 
+  EModRet OnUserAction(CString& sTarget, CString& sMessage) override;
+  EModRet OnPrivAction(CNick& Nick, CString& sMessage) override;
+  EModRet OnChanAction(CNick& Nick, CChan& Channel, CString& sMessage) override;
+
+  EModRet OnUserMsg(CString& sTarget, CString& sMessage) override;
+  EModRet OnPrivMsg(CNick& Nick, CString& sMessage) override;
   EModRet OnChanMsg(CNick& Nick, CChan& Channel, CString& sMessage) override;
 
 private:
@@ -115,9 +134,65 @@ bool CLogSQL::OnLoad(const CString& sArgs, CString& sMessage) {
   return true;
 }
 
+void CLogSQL::OnIRCConnected() {
+}
+
+void CLogSQL::OnIRCDisconnected() {
+}
+
+void CLogSQL::OnRawMode2(const CNick* pOpNick, CChan& Channel, const CString& sModes, const CString& sArgs) {
+}
+
+void CLogSQL::OnKick(const CNick& Nick, const CString& sOpNick, CChan& Channel, const CString& sMessage) {
+}
+
+void CLogSQL::OnQuit(const CNick& Nick, const CString& sMessage, const vector<CChan*>& vChans) {
+}
+
+void CLogSQL::OnJoin(const CNick& Nick, CChan& Channel) {
+}
+
+void CLogSQL::OnPart(const CNick& Nick, CChan& Channel, const CString& sMessage) {
+}
+
+void CLogSQL::OnNick(const CNick& Nick, const CString& sNewNick, const vector<CChan*>& vChans) {
+}
+
+CModule::EModRet CLogSQL::OnTopic(CNick& Nick, CChan& Channel, CString& sTopic) {
+  return CONTINUE;
+}
+
+CModule::EModRet CLogSQL::OnUserNotice(CString& sTarget, CString& sMessage) {
+  return CONTINUE;
+}
+
+CModule::EModRet CLogSQL::OnPrivNotice(CNick& Nick, CString& sMessage) {
+  return CONTINUE;
+}
+
 CModule::EModRet CLogSQL::OnChanNotice(CNick& Nick, CChan& Channel, CString& sMessage) {
   PutLog(Channel, Nick.GetNick(), "NOTICE", sMessage);
 
+  return CONTINUE;
+}
+
+CModule::EModRet CLogSQL::OnUserAction(CString& sTarget, CString& sMessage) {
+  return CONTINUE;
+}
+
+CModule::EModRet CLogSQL::OnPrivAction(CNick& Nick, CString& sMessage) {
+  return CONTINUE;
+}
+
+CModule::EModRet CLogSQL::OnChanAction(CNick& Nick, CChan& Channel, CString& sMessage) {
+  return CONTINUE;
+}
+
+CModule::EModRet CLogSQL::OnUserMsg(CString& sTarget, CString& sMessage) {
+  return CONTINUE;
+}
+
+CModule::EModRet CLogSQL::OnPrivMsg(CNick& Nick, CString& sMessage) {
   return CONTINUE;
 }
 
