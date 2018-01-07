@@ -143,7 +143,8 @@ void CLogSQL::OnIRCDisconnected() {
 void CLogSQL::OnRawMode2(const CNick* pOpNick, CChan& Channel, const CString& sModes, const CString& sArgs) {
 }
 
-void CLogSQL::OnKick(const CNick& Nick, const CString& sOpNick, CChan& Channel, const CString& sMessage) {
+void CLogSQL::OnKick(const CNick& OpNick, const CString& sKickedNick, CChan& Channel, const CString& sMessage) {
+  PutLog(Channel, OpNick.GetNick(), "KICK", " kicked " + sKickedNick + " (" + sMessage + ")");
 }
 
 void CLogSQL::OnQuit(const CNick& Nick, const CString& sMessage, const vector<CChan*>& vChans) {
