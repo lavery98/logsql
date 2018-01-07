@@ -159,6 +159,8 @@ void CLogSQL::OnNick(const CNick& Nick, const CString& sNewNick, const vector<CC
 }
 
 CModule::EModRet CLogSQL::OnTopic(CNick& Nick, CChan& Channel, CString& sTopic) {
+  PutLog(Channel, Nick.GetNick(), "TOPIC", sTopic);
+
   return CONTINUE;
 }
 
