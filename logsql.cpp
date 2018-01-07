@@ -13,9 +13,12 @@ public:
       mysql_close(mysqlConn);
   }
 
-  void PutLog(const CString& sTarget, const CString& sSender, const CString& sMessage);
+  void PutLog(const CString& sTarget, const CString& sSender, const CString& sType, const CString& sMessage, const int priv = 0);
+  void PutLog(const CChan& Channel, const CString& sSender, const CString& sType, const CString& sMessage);
 
   bool OnLoad(const CString& sArgs, CString& sMessage) override;
+
+  EModRet OnChanNotice(CNick& Nick, CChan& Channel, CString& sMessage) override;
 
   EModRet OnChanMsg(CNick& Nick, CChan& Channel, CString& sMessage) override;
 
@@ -29,22 +32,23 @@ private:
   MYSQL *mysqlConn;
 };
 
-void CLogSQL::PutLog(const CString& sTarget, const CString& sSender, const CString& sMessage) {
+void CLogSQL::PutLog(const CString& sTarget, const CString& sSender, const CString& sType, const CString& sMessage, const int priv) {
   if(mysqlConn) {
     // Create the query string
     int tableLen = sizeof(char)*strlen(sTable.c_str());
     int targetLen = sizeof(char)*strlen(sTarget.c_str());
     int senderLen = sizeof(char)*strlen(sSender.c_str());
+    int typeLen = sizeof(char)*strlen(sType.c_str());
     int messageLen = sizeof(char)*strlen(sMessage.c_str());
     char *target = (char*) malloc(2*targetLen+1);
     char *sender = (char*) malloc(2*senderLen+1);
     char *message = (char*) malloc(2*messageLen+1);
-    char *query = (char*) malloc(2*(tableLen+targetLen+senderLen+messageLen)+80);
+    char *query = (char*) malloc(2*(tableLen+targetLen+senderLen+typeLen+messageLen)+(12+61+4+1+4+4+4+2)+1);
 
     mysql_real_escape_string(mysqlConn, target, sTarget.c_str(), targetLen);
     mysql_real_escape_string(mysqlConn, sender, sSender.c_str(), senderLen);
     mysql_real_escape_string(mysqlConn, message, sMessage.c_str(), messageLen);
-    sprintf(query, "INSERT INTO %s (`target`, `private`, `sender`, `message`) VALUES ('%s', 0, '%s', '%s')", sTable.c_str(), target, sender, message);
+    sprintf(query, "INSERT INTO %s (`target`, `private`, `sender`, `type`, `message`) VALUES ('%s', '%d', '%s', '%s', '%s')", sTable.c_str(), target, priv, sender, sType.c_str(), message);
     DEBUG(query);
 
     // Execute the query
@@ -59,6 +63,10 @@ void CLogSQL::PutLog(const CString& sTarget, const CString& sSender, const CStri
     free(message);
     free(query);
   }
+}
+
+void CLogSQL::PutLog(const CChan& Channel, const CString& sSender, const CString& sType, const CString& sMessage) {
+  PutLog(Channel.GetName(), sSender, sType, sMessage);
 }
 
 bool CLogSQL::OnLoad(const CString& sArgs, CString& sMessage) {
@@ -94,8 +102,14 @@ bool CLogSQL::OnLoad(const CString& sArgs, CString& sMessage) {
   return true;
 }
 
+CModule::EModRet CLogSQL::OnChanNotice(CNick& Nick, CChan& Channel, CString& sMessage) {
+  PutLog(Channel, Nick.GetNick(), "NOTICE", sMessage);
+
+  return CONTINUE;
+}
+
 CModule::EModRet CLogSQL::OnChanMsg(CNick& Nick, CChan& Channel, CString& sMessage) {
-  PutLog(Channel.GetName(), Nick.GetNick(), sMessage);
+  PutLog(Channel, Nick.GetNick(), "PRIVMSG", sMessage);
 
   return CONTINUE;
 }
