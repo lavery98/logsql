@@ -150,6 +150,7 @@ void CLogSQL::OnQuit(const CNick& Nick, const CString& sMessage, const vector<CC
 }
 
 void CLogSQL::OnJoin(const CNick& Nick, CChan& Channel) {
+  PutLog(Channel, Nick.GetNick(), "JOIN", "");
 }
 
 void CLogSQL::OnPart(const CNick& Nick, CChan& Channel, const CString& sMessage) {
