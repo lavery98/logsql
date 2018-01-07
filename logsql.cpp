@@ -142,7 +142,7 @@ void CLogSQL::OnIRCDisconnected() {
 
 void CLogSQL::OnRawMode2(const CNick* pOpNick, CChan& Channel, const CString& sModes, const CString& sArgs) {
   CString sNick = pOpNick ? pOpNick->GetNick() : "Server";
-  PutLog(Channel, sNick, "MODE", sModes + sArgs);
+  PutLog(Channel, sNick, "MODE", sModes + " " + sArgs);
 }
 
 void CLogSQL::OnKick(const CNick& OpNick, const CString& sKickedNick, CChan& Channel, const CString& sMessage) {
