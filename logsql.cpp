@@ -1,4 +1,5 @@
 #include <znc/Chan.h>
+#include <znc/IRCNetwork.h>
 #include <znc/Modules.h>
 #include <znc/User.h>
 
@@ -202,10 +203,20 @@ CModule::EModRet CLogSQL::OnChanAction(CNick& Nick, CChan& Channel, CString& sMe
 }
 
 CModule::EModRet CLogSQL::OnUserMsg(CString& sTarget, CString& sMessage) {
+  CIRCNetwork* pNetwork = GetNetwork();
+  if(pNetwork) {
+    CChan* pChannel = pNetwork->FindChan(sTarget);
+    if(pChannel) {
+      PutLog(*pChannel, pNetwork->GetCurNick(), "PRIVMSG", sMessage);
+    }
+  }
+
   return CONTINUE;
 }
 
 CModule::EModRet CLogSQL::OnPrivMsg(CNick& Nick, CString& sMessage) {
+  //PutLog( , Nick.GetNick(), "PRIVMSG", sMessage);
+
   return CONTINUE;
 }
 
