@@ -132,6 +132,14 @@ bool CLogSQL::OnLoad(const CString& sArgs, CString& sMessage) {
     return false;
   }
 
+  // Log channel modes on load
+  CIRCNetwork* pNetwork = GetNetwork();
+  vector<CChan*> vChans = pNetwork->GetChans();
+
+  for(CChan* pChan : vChans) {
+    PutLog(*pChan, "", "LOAD", pChan->GetModeString());
+  }
+
   return true;
 }
 
