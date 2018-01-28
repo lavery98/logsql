@@ -66,7 +66,7 @@ void CLogSQL::PutLog(const CString& sSource, const CString& sCommand, const CStr
     char *source = (char*) malloc(2*sourceLen+1);
     char *message = (char*) malloc(2*messageLen+1);
     //char *query = (char*) malloc(2*(tableLen+targetLen+senderLen+typeLen+messageLen)+(12+61+4+1+4+4+4+2)+1);
-    char *query = (char*) malloc(2*(tableLen+targetLen+senderLen+typeLen+messageLen)+(12+53+4+4+4+2)+1);
+    char *query = (char*) malloc(2*(tableLen+targetLen+sourceLen+commandLen+messageLen)+(12+53+4+4+4+2)+1);
 
     mysql_real_escape_string(mysqlConn, target, sTarget.c_str(), targetLen);
     mysql_real_escape_string(mysqlConn, source, sSource.c_str(), sourceLen);
@@ -141,7 +141,7 @@ bool CLogSQL::OnLoad(const CString& sArgs, CString& sMessage) {
   vector<CChan*> vChans = pNetwork->GetChans();
 
   for(CChan* pChan : vChans) {
-    PutLog(*pChan, "", "LOAD", pChan->GetModeString());
+    //PutLog(*pChan, "", "LOAD", pChan->GetModeString());
   }
 
   return true;
@@ -220,6 +220,8 @@ CModule::EModRet CLogSQL::OnUserMsg(CString& sTarget, CString& sMessage) {
     CChan* pChannel = pNetwork->FindChan(sTarget);
     if(pChannel) {
       PutLog(pNetwork->GetCurNick(), "PRIVMSG", *pChannel, sMessage);
+    } else {
+      PutLog(pNetwork->GetCurNick(), "PRIVMSG", sTarget, sMessage);
     }
   }
 
