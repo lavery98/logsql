@@ -227,7 +227,10 @@ CModule::EModRet CLogSQL::OnUserMsg(CString& sTarget, CString& sMessage) {
 }
 
 CModule::EModRet CLogSQL::OnPrivMsg(CNick& Nick, CString& sMessage) {
-  //PutLog( , Nick.GetNick(), "PRIVMSG", sMessage);
+  CIRCNetwork* pNetwork = GetNetwork();
+  if(pNetwork) {
+    PutLog(Nick.GetNick(), "PRIVMSG", pNetwork->GetCurNick(), sMessage);
+  }
 
   return CONTINUE;
 }
