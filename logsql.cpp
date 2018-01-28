@@ -17,8 +17,8 @@ public:
       mysql_close(mysqlConn);
   }
 
-  void PutLog(const CString& sTarget, const CString& sSender, const CString& sType, const CString& sMessage, const int priv = 0);
-  void PutLog(const CChan& Channel, const CString& sSender, const CString& sType, const CString& sMessage);
+  void PutLog(const CString& sSource, const CString& sCommand, const CString& sTarget, const CString& sMessage, const int priv = 0);
+  void PutLog(const CString& sSource, const CString& sCommand, const CChan& Channel, const CString& sMessage);
 
   bool OnLoad(const CString& sArgs, CString& sMessage) override;
   void OnIRCConnected() override;
@@ -54,23 +54,25 @@ private:
   MYSQL *mysqlConn;
 };
 
-void CLogSQL::PutLog(const CString& sTarget, const CString& sSender, const CString& sType, const CString& sMessage, const int priv) {
+void CLogSQL::PutLog(const CString& sSource, const CString& sCommand, const CString& sTarget, const CString& sMessage, const int priv) {
   if(mysqlConn) {
     // Create the query string
     int tableLen = sizeof(char)*strlen(sTable.c_str());
     int targetLen = sizeof(char)*strlen(sTarget.c_str());
-    int senderLen = sizeof(char)*strlen(sSender.c_str());
-    int typeLen = sizeof(char)*strlen(sType.c_str());
+    int sourceLen = sizeof(char)*strlen(sSource.c_str());
+    int commandLen = sizeof(char)*strlen(sCommand.c_str());
     int messageLen = sizeof(char)*strlen(sMessage.c_str());
     char *target = (char*) malloc(2*targetLen+1);
-    char *sender = (char*) malloc(2*senderLen+1);
+    char *source = (char*) malloc(2*sourceLen+1);
     char *message = (char*) malloc(2*messageLen+1);
-    char *query = (char*) malloc(2*(tableLen+targetLen+senderLen+typeLen+messageLen)+(12+61+4+1+4+4+4+2)+1);
+    //char *query = (char*) malloc(2*(tableLen+targetLen+senderLen+typeLen+messageLen)+(12+61+4+1+4+4+4+2)+1);
+    char *query = (char*) malloc(2*(tableLen+targetLen+senderLen+typeLen+messageLen)+(12+53+4+4+4+2)+1);
 
     mysql_real_escape_string(mysqlConn, target, sTarget.c_str(), targetLen);
-    mysql_real_escape_string(mysqlConn, sender, sSender.c_str(), senderLen);
+    mysql_real_escape_string(mysqlConn, source, sSource.c_str(), sourceLen);
     mysql_real_escape_string(mysqlConn, message, sMessage.c_str(), messageLen);
-    sprintf(query, "INSERT INTO %s (`target`, `private`, `sender`, `type`, `message`) VALUES ('%s', '%d', '%s', '%s', '%s')", sTable.c_str(), target, priv, sender, sType.c_str(), message);
+    //sprintf(query, "INSERT INTO %s (`target`, `private`, `sender`, `type`, `message`) VALUES ('%s', '%d', '%s', '%s', '%s')", sTable.c_str(), target, priv, sender, sType.c_str(), message);
+    sprintf(query, "INSERT INTO %s (`source`, `command`, `target`, `message`) VALUES ('%s', '%s', '%s', '%s')", sTable.c_str(), source, sCommand.c_str(), target, message);
     DEBUG(query);
 
     // Execute the query
@@ -81,13 +83,13 @@ void CLogSQL::PutLog(const CString& sTarget, const CString& sSender, const CStri
 
     // Free all variables
     free(target);
-    free(sender);
+    free(source);
     free(message);
     free(query);
   }
 }
 
-void CLogSQL::PutLog(const CChan& Channel, const CString& sSender, const CString& sType, const CString& sMessage) {
+void CLogSQL::PutLog(const CString& sSource, const CString& sCommand, const CChan& Channel, const CString& sMessage) {
   const map<unsigned char, CString>& modes = Channel.GetModes();
   int priv = 0;
 
@@ -99,10 +101,12 @@ void CLogSQL::PutLog(const CChan& Channel, const CString& sSender, const CString
     }
   }
 
-  PutLog(Channel.GetName(), sSender, sType, sMessage, priv);
+  PutLog(sSource, sCommand, Channel.GetName(), sMessage, priv);
 }
 
 bool CLogSQL::OnLoad(const CString& sArgs, CString& sMessage) {
+  // TODO: use a seperate page to manage the database settings
+
   sHost = sArgs.Token(0);
   sUserDB = sArgs.Token(1);
   sPassDB = sArgs.Token(2);
@@ -151,35 +155,35 @@ void CLogSQL::OnIRCDisconnected() {
 
 void CLogSQL::OnRawMode2(const CNick* pOpNick, CChan& Channel, const CString& sModes, const CString& sArgs) {
   CString sNick = pOpNick ? pOpNick->GetNick() : "Server";
-  PutLog(Channel, sNick, "MODE", sModes + " " + sArgs);
+  PutLog(sNick, "MODE", Channel, sModes + " " + sArgs);
 }
 
 void CLogSQL::OnKick(const CNick& OpNick, const CString& sKickedNick, CChan& Channel, const CString& sMessage) {
-  PutLog(Channel, OpNick.GetNick(), "KICK", " kicked " + sKickedNick + " (" + sMessage + ")");
+  //PutLog(Channel, OpNick.GetNick(), "KICK", " kicked " + sKickedNick + " (" + sMessage + ")");
 }
 
 void CLogSQL::OnQuit(const CNick& Nick, const CString& sMessage, const vector<CChan*>& vChans) {
   for(CChan* pChan : vChans) {
-    PutLog(*pChan, Nick.GetNick(), "QUIT", sMessage);
+    PutLog(Nick.GetNick(), "QUIT", *pChan, sMessage);
   }
 }
 
 void CLogSQL::OnJoin(const CNick& Nick, CChan& Channel) {
-  PutLog(Channel, Nick.GetNick(), "JOIN", "");
+  PutLog(Nick.GetNick(), "JOIN", Channel, "");
 }
 
 void CLogSQL::OnPart(const CNick& Nick, CChan& Channel, const CString& sMessage) {
-  PutLog(Channel, Nick.GetNick(), "PART", sMessage);
+  PutLog(Nick.GetNick(), "PART", Channel, sMessage);
 }
 
 void CLogSQL::OnNick(const CNick& Nick, const CString& sNewNick, const vector<CChan*>& vChans) {
   for(CChan* pChan : vChans) {
-    PutLog(*pChan, Nick.GetNick(), "NICK", sNewNick);
+    PutLog(Nick.GetNick(), "NICK", *pChan, sNewNick);
   }
 }
 
 CModule::EModRet CLogSQL::OnTopic(CNick& Nick, CChan& Channel, CString& sTopic) {
-  PutLog(Channel, Nick.GetNick(), "TOPIC", sTopic);
+  PutLog(Nick.GetNick(), "TOPIC", Channel, sTopic);
 
   return CONTINUE;
 }
@@ -193,7 +197,7 @@ CModule::EModRet CLogSQL::OnPrivNotice(CNick& Nick, CString& sMessage) {
 }
 
 CModule::EModRet CLogSQL::OnChanNotice(CNick& Nick, CChan& Channel, CString& sMessage) {
-  PutLog(Channel, Nick.GetNick(), "NOTICE", sMessage);
+  PutLog(Nick.GetNick(), "NOTICE", Channel, sMessage);
 
   return CONTINUE;
 }
@@ -215,7 +219,7 @@ CModule::EModRet CLogSQL::OnUserMsg(CString& sTarget, CString& sMessage) {
   if(pNetwork) {
     CChan* pChannel = pNetwork->FindChan(sTarget);
     if(pChannel) {
-      PutLog(*pChannel, pNetwork->GetCurNick(), "PRIVMSG", sMessage);
+      PutLog(pNetwork->GetCurNick(), "PRIVMSG", *pChannel, sMessage);
     }
   }
 
@@ -229,7 +233,7 @@ CModule::EModRet CLogSQL::OnPrivMsg(CNick& Nick, CString& sMessage) {
 }
 
 CModule::EModRet CLogSQL::OnChanMsg(CNick& Nick, CChan& Channel, CString& sMessage) {
-  PutLog(Channel, Nick.GetNick(), "PRIVMSG", sMessage);
+  PutLog(Nick.GetNick(), "PRIVMSG", Channel, sMessage);
 
   return CONTINUE;
 }
